@@ -33,5 +33,3 @@ fun GlobalYouTube.applyContentRegion(
         settings = settings,
     )
 }
-
-internal expect fun likelyContentCountry(locale: Locale): String
