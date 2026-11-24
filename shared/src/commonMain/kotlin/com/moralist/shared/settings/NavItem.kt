@@ -1,0 +1,22 @@
+/**
+ * Hanz Dev Official (C) 2026
+ * Lisensi: Hanz Dev Official
+ */
+
+package com.moralist.shared.settings
+
+import kotlinx.serialization.Serializable
+
+object NavigationId {
+    const val HOME = "home"
+    const val LIBRARY = "library"
+    const val HISTORY = "history"
+    const val STATISTICS = "stats"
+    const val LISTEN_TOGETHER = "together"
+}
+
+@Serializable
+data class NavItem(
+    val id: String,
+    val visible: Boolean = true,
+)
