@@ -519,11 +519,6 @@ private fun readHttpLine(input: BufferedInputStream): String? {
     error("HTTP line too long")
 }
 
-internal expect fun disallowDlnaDoctype(
-    factory: DocumentBuilderFactory,
-    bytes: ByteArray,
-)
-
 private fun parseXml(bytes: ByteArray): Document {
     require(!bytes.toString(Charsets.UTF_8).contains("<!DOCTYPE", ignoreCase = true))
     val factory = DocumentBuilderFactory.newInstance()
