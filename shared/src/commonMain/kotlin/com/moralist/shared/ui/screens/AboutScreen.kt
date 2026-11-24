@@ -91,7 +91,6 @@ import com.moralist.shared.ui.components.images.AsyncImage
 import com.moralist.shared.ui.icons.MoralistIcons
 import com.moralist.shared.ui.utils.toPolygonShape
 import com.moralist.shared.ui.utils.verticalScrollWithDrag
-import com.moralist.shared.utils.getAppArchitecture
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -102,7 +101,6 @@ fun AboutScreen(
     modifier: Modifier = Modifier,
     appName: String = "",
     version: String = BuildConfig.APP_VERSION,
-    architecture: String = remember { getAppArchitecture().uppercase() },
     isDebug: Boolean = BuildConfig.DEBUG,
     colorScheme: ColorScheme = MaterialTheme.colorScheme,
     contentPadding: PaddingValues = PaddingValues(16.dp),
@@ -206,7 +204,6 @@ fun AboutScreen(
                 logo = logo,
                 appName = appName,
                 version = version,
-                architecture = architecture,
                 isDebug = isDebug,
                 colorScheme = colorScheme,
                 onLogoClick = ::handleLogoClick,
@@ -218,13 +215,6 @@ fun AboutScreen(
                 onEmail = { runCatching { uriHandler.openUri("mailto:$ABOUT_EMAIL") } },
             )
 
-            Text(
-                text = text.licenseDescription,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                color = colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-            )
         }
     }
 
@@ -256,7 +246,6 @@ private fun AppHeaderCard(
     logo: Painter,
     appName: String,
     version: String,
-    architecture: String,
     isDebug: Boolean,
     colorScheme: ColorScheme,
     onLogoClick: () -> Unit,
@@ -310,7 +299,6 @@ private fun AppHeaderCard(
                     colorScheme.surfaceContainerHighest,
                     colorScheme.onSurfaceVariant,
                 )
-                InfoBadge(architecture, colorScheme.surfaceContainerHighest, colorScheme.onSurfaceVariant)
                 InfoBadge(
                     stringResource(if (isDebug) Res.string.build_type_debug else Res.string.build_type_release),
                     colorScheme.secondaryContainer,
