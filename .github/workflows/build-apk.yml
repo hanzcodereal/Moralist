@@ -1,0 +1,75 @@
+name: Build APK Release
+
+# Hanya jalan manual: GitHub, tab Actions, pilih "Build APK Release", tekan "Run workflow".
+on:
+  workflow_dispatch:
+    inputs:
+      terbitkan_release:
+        description: "Terbitkan juga sebagai GitHub Release (dapat link unduhan langsung)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Jika repo diunggah lewat zip, folder submodule kosong. Ambil sendiri kalau begitu.
+      - name: Pastikan submodule ada
+        run: |
+          if [ -z "$(ls -A metroproto 2>/dev/null)" ]; then
+            rm -rf metroproto
+            git clone --depth 1 https://github.com/MetrolistGroup/metroproto.git metroproto
+          fi
+          if [ -z "$(ls -A opusDecoder/src/main/jni/libopus 2>/dev/null)" ]; then
+            rm -rf opusDecoder/src/main/jni/libopus
+            git clone --depth 1 --branch v1.5.2 https://github.com/xiph/opus.git opusDecoder/src/main/jni/libopus
+          fi
+
+      - name: Pasang JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Siapkan Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK release
+        run: |
+          chmod +x gradlew
+          ./gradlew :androidApp:assembleRelease --no-daemon --stacktrace
+
+      - name: Siapkan berkas APK
+        id: apk
+        run: |
+          VERSION=$(grep '^appVersion=' gradle.properties | cut -d= -f2)
+          SRC=$(find androidApp/build/outputs/apk/release -name '*.apk' | head -n 1)
+          test -n "$SRC" || { echo "APK release tidak ditemukan"; exit 1; }
+          mkdir -p dist
+          cp "$SRC" "dist/moralist-android-$VERSION.apk"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          sha256sum "dist/moralist-android-$VERSION.apk"
+
+      - name: Unggah sebagai artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: moralist-android-${{ steps.apk.outputs.version }}
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - name: Terbitkan GitHub Release
+        if: ${{ inputs.terbitkan_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.apk.outputs.version }}
+          name: Moralist ${{ steps.apk.outputs.version }}
+          files: dist/*.apk
