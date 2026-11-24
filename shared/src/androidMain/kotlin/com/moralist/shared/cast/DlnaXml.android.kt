@@ -6,7 +6,7 @@ import org.xmlpull.v1.XmlPullParserException
 import java.io.ByteArrayInputStream
 import javax.xml.parsers.DocumentBuilderFactory
 
-internal actual fun disallowDlnaDoctype(
+internal fun disallowDlnaDoctype(
     factory: DocumentBuilderFactory,
     bytes: ByteArray,
 ) {
