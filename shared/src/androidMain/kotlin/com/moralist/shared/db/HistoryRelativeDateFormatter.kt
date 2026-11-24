@@ -13,7 +13,7 @@ import android.os.Build
 import java.util.Locale
 import kotlin.math.abs
 
-internal actual fun historyRelativeDateFormatter(locale: Locale): (Double, HistoryDateUnit, Boolean) -> String {
+internal fun historyRelativeDateFormatter(locale: Locale): (Double, HistoryDateUnit, Boolean) -> String {
     val formatter = RelativeDateTimeFormatter.getInstance(locale)
     return { amount, unit, numeric ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -65,9 +65,9 @@ private fun formatLegacy(
     return formatter.format(abs(amount), if (amount < 0) Direction.LAST else Direction.NEXT, relativeUnit)
 }
 
-internal actual fun historyYearMonthPattern(locale: Locale): String = DateTimePatternGenerator.getInstance(locale).getBestPattern("yMMMM")
+internal fun historyYearMonthPattern(locale: Locale): String = DateTimePatternGenerator.getInstance(locale).getBestPattern("yMMMM")
 
-internal actual fun historyDateRangeLabel(
+internal fun historyDateRangeLabel(
     start: Long,
     end: Long,
     locale: Locale,
