@@ -1,0 +1,33 @@
+# Home scrolling and player gestures, exercised on the low-end benchmark device.
+# AGP expands these source-level rules and R8 rewrites them for the release DEX.
+# Cold start holds the splash screen until App startup, settings, Koin and the theme are ready.
+HSPLcom/moralist/android/App**->**(**)**
+HSPLcom/moralist/android/MainActivity**->**(**)**
+HSPLcom/moralist/android/NavigationRestorationViewModel**->**(**)**
+HSPLcom/moralist/android/di/**->**(**)**
+HSPLcom/moralist/android/locale/**->**(**)**
+HSPLcom/moralist/android/ui/theme/**->**(**)**
+HSPLcom/moralist/shared/settings/**->**(**)**
+HSPLcom/moralist/shared/ui/theme/**->**(**)**
+HSPLcom/moralist/android/ui/MoralistAppKt**->**(**)**
+HSPLcom/moralist/android/ui/screens/HomeScreenKt**->**(**)**
+HSPLcom/moralist/shared/ui/screens/HomeContentKt**->**(**)**
+HSPLcom/moralist/shared/ui/components/SpeedDialGridKt**->**(**)**
+HSPLcom/moralist/android/ui/components/MiniPlayerKt**->**(**)**
+HPLcom/moralist/shared/ui/components/BottomSheetKt**->**(**)**
+HPLcom/moralist/shared/ui/components/BottomSheetState**->**(**)**
+# The expanded player, queue, progress sliders and lyrics redraw every frame while visible.
+HPLcom/moralist/shared/ui/player/**->**(**)**
+HPLcom/moralist/android/ui/player/**->**(**)**
+HPLcom/moralist/shared/ui/components/sliders/**->**(**)**
+HPLcom/moralist/shared/ui/components/lyrics/**->**(**)**
+# Background playback runs these on ExoPlayer's playback thread for hours; keep them out of the interpreter.
+HSPLandroidx/media3/exoplayer/**->**(**)**
+HSPLandroidx/media3/common/**->**(**)**
+HSPLandroidx/media3/decoder/**->**(**)**
+HSPLandroidx/media3/extractor/**->**(**)**
+HSPLandroidx/media3/datasource/**->**(**)**
+HSPLandroidx/media3/session/**->**(**)**
+HSPLcom/moralist/android/playback/**->**(**)**
+HSPLcom/moralist/shared/playback/**->**(**)**
+HSPLcom/moralist/shared/youtube/playback/**->**(**)**
