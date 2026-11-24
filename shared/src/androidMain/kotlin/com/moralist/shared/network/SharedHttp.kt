@@ -55,8 +55,6 @@ internal fun shouldLogHttpCallFailure(
         error is SocketTimeoutException ||
         (error is InterruptedIOException && error.message == "timeout")
 
-internal expect fun apiOkHttpClient(): OkHttpClient
-
 /** Share the Ktor engine; closing a client-owned engine would shut down the shared OkHttp dispatcher. */
 val sharedHttpEngine: HttpClientEngine by lazy {
     OkHttp.create { preconfigured = apiOkHttpClient() }
