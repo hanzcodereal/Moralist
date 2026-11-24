@@ -333,7 +333,7 @@ fun HomeScreen(
                     }
                 }
                 item(key = "home_topbar") {
-                    HomeTopBar(onRecognize = onNavigateToRecognition, showRecognize = !isTv)
+                    HomeTopBar()
                 }
                 when {
                     uiState.showLoadingPlaceholder -> {
@@ -510,10 +510,7 @@ private val MoraGlassFill = Color(0xFF171717).copy(alpha = 0.85f)
 private val MoraHairline = Color.White.copy(alpha = 0.12f)
 
 @Composable
-private fun HomeTopBar(
-    onRecognize: () -> Unit,
-    showRecognize: Boolean,
-) {
+private fun HomeTopBar() {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -533,24 +530,6 @@ private fun HomeTopBar(
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f),
         )
-        if (showRecognize) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f))
-                        .clickable(role = Role.Button, onClick = onRecognize),
-            ) {
-                Icon(
-                    imageVector = MoralistIcons.Outlined.AudioCapture,
-                    contentDescription = stringResource(Res.string.recognize_music),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-        }
     }
 }
 
