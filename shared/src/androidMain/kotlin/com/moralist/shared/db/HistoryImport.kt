@@ -24,17 +24,6 @@ internal enum class HistoryDateUnit(
     YEAR(365 * DAY_MS),
 }
 
-internal expect fun historyYearMonthPattern(locale: Locale): String
-
-internal expect fun historyRelativeDateFormatter(locale: Locale): (Double, HistoryDateUnit, Boolean) -> String
-
-internal expect fun historyDateRangeLabel(
-    start: Long,
-    end: Long,
-    locale: Locale,
-    zone: String,
-): String
-
 fun parseHistoryDate(
     playedText: String,
     now: Long,
