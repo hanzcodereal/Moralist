@@ -1,0 +1,65 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+.kotlin/errors/
+gradle/gradle-daemon-jvm.properties
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.bak
+
+# VSCode
+.vscode/
+
+# Zed
+.zed/
+
+# Android
+local.properties
+.externalNativeBuild
+.cxx
+*.keystore
+!debug.keystore
+
+# Secrets
+secrets.properties
+chucker-export-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / dumps
+*.log
+*.har
+/*.txt
+!androidApp/src/main/baseline-prof.txt
+!opusDecoder/src/main/jni/CMakeLists.txt
+!opusDecoder/src/main/resources/META-INF/LICENSE-libopus.txt
+Screenshot_*.png
+
+# Local / scratch
+stuff
+.stuff/
+stuff/*
+skills
+dist/
+tools/
+scripts/.fonts/
+__pycache__/
+/linter/
+HANDOFF.md
+
+# AI tooling
+.cortexkit
+.cursor
+.claude
+.codex
+.codeium
+.opencode
+.mcp.json
+/*.flatpak
