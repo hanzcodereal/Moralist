@@ -12,5 +12,3 @@ fun formatHistoryMonth(
     DateTimeFormatter
         .ofPattern(historyMonthPattern(locale), locale)
         .format(Instant.ofEpochMilli(playedAt).atZone(ZoneId.systemDefault()))
-
-internal expect fun historyMonthPattern(locale: Locale): String
