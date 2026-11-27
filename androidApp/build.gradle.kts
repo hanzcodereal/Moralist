@@ -254,7 +254,7 @@ android {
         applicationId = "com.moralist.music"
         minSdk = 24
         targetSdk = 37
-        versionCode = 200
+        versionCode = 300
         versionName = appVersion
 
         vectorDrawables.useSupportLibrary = true
