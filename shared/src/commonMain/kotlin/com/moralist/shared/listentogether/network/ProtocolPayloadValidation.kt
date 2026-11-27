@@ -43,6 +43,9 @@ internal fun payloadMatchesMessageType(
         MessageTypes.ACK -> payload == null
         MessageTypes.SERVER_RESTARTING -> payload is ServerRestartingPayload
         MessageTypes.SUGGESTION_SUBMITTED -> payload is SuggestionSubmittedPayload
+        MessageTypes.SEND_CHAT -> payload is SendChatPayload
+        MessageTypes.CHAT_MESSAGE -> payload is ChatMessagePayload
+        MessageTypes.CHAT_HISTORY -> payload is ChatHistoryPayload
         else -> false
     }
 
@@ -88,6 +91,9 @@ internal val knownMessageTypes =
         MessageTypes.ACK,
         MessageTypes.SERVER_RESTARTING,
         MessageTypes.SUGGESTION_SUBMITTED,
+        MessageTypes.SEND_CHAT,
+        MessageTypes.CHAT_MESSAGE,
+        MessageTypes.CHAT_HISTORY,
     )
 
 internal val payloadlessMessageTypes = setOf(MessageTypes.LEAVE_ROOM, MessageTypes.REQUEST_SYNC, MessageTypes.ACK)
