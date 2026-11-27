@@ -1694,6 +1694,11 @@ private fun ListenTogetherRoomScreen(
                     SettingsNavigationCard(onClick = onNavigateToSettings)
                 }
             }
+            val chatItems: LazyListScope.() -> Unit = {
+                item {
+                    ListenTogetherChatCard(manager = manager)
+                }
+            }
 
             if (twoPane) {
                 Row(modifier = Modifier.fillMaxSize()) {
@@ -1711,6 +1716,7 @@ private fun ListenTogetherRoomScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         peopleItems()
+                        chatItems()
                         settingsItems()
                     }
                 }
@@ -1723,6 +1729,7 @@ private fun ListenTogetherRoomScreen(
                     codeItems()
                     peopleItems()
                     playerItems()
+                    chatItems()
                     settingsItems()
                 }
             }
