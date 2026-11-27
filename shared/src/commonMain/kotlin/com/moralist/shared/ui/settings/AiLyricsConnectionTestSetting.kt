@@ -53,6 +53,7 @@ private fun ProviderConnectionTest(
     var busy by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<AiLyricsProbeResult?>(null) }
     var error by remember { mutableStateOf(false) }
+    var errorDetail by remember { mutableStateOf<String?>(null) }
     val missingCredentials = stringResource(Res.string.ai_test_missing_credentials)
     val (apiKey, baseUrl) = settings.lyricsAiCredentials(provider)
     val canRun =
@@ -76,6 +77,7 @@ private fun ProviderConnectionTest(
                 }
                 busy = true
                 error = false
+                errorDetail = null
                 result = null
                 scope.launch {
                     val probe =
@@ -100,6 +102,7 @@ private fun ProviderConnectionTest(
                         onFailure = {
                             result = null
                             error = true
+                            errorDetail = it.message?.take(240)
                         },
                     )
                 }
@@ -119,6 +122,13 @@ private fun ProviderConnectionTest(
                     if (canRun) stringResource(Res.string.ai_test_connection_failed) else missingCredentials,
                     color = MaterialTheme.colorScheme.error,
                 )
+                errorDetail?.takeIf { canRun }?.let { detail ->
+                    Text(
+                        detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             result != null -> {
