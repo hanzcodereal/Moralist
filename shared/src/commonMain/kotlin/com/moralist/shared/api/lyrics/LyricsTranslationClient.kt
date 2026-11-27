@@ -323,6 +323,7 @@ class LyricsTranslationClient(
 
             AiProtocol.GEMINI -> {
                 requestGeminiCompatible(
+                    provider,
                     apiKey,
                     baseUrl,
                     model,
@@ -616,6 +617,7 @@ class LyricsTranslationClient(
         }
 
     private suspend fun requestGeminiCompatible(
+        provider: String,
         apiKey: String,
         baseUrl: String,
         model: String,
@@ -628,41 +630,69 @@ class LyricsTranslationClient(
         val geminiPreset =
             AiProviderPresets.find("Gemini")
                 ?: return Result.failure(IllegalStateException("Gemini preset is not configured"))
-        val effectiveModel = model.ifBlank { geminiPreset.defaultModel }
-        if (effectiveModel.isBlank()) return Result.failure(IllegalArgumentException("Gemini model is required"))
-        val resolvedBase = baseUrl.ifBlank { geminiPreset.endpoint }
-        if (resolvedBase.isBlank()) return Result.failure(IllegalArgumentException("Gemini endpoint is required"))
-        val url =
-            when {
-                resolvedBase.contains("{model}") -> {
-                    resolvedBase.replace("{model}", effectiveModel)
-                }
-
-                model.isNotBlank() -> {
-                    resolvedBase.replace(Regex("/models/[^/:]+(:generateContent)")) { match ->
-                        "/models/$effectiveModel${match.groupValues[1]}"
-                    }
-                }
-
-                else -> {
-                    resolvedBase
+        val isBuiltIn = provider.equals("Gemini", ignoreCase = true)
+        // Preset Gemini bawaan tidak punya endpoint yang bisa diubah, jadi selalu pakai endpoint resminya.
+        val resolvedBase = if (isBuiltIn || baseUrl.isBlank()) geminiPreset.endpoint else baseUrl
+        // Nama model sisa dari provider lain (misalnya "qwen/..." atau ":free") dibuang.
+        val requestedModel =
+            model
+                .trim()
+                .removePrefix("models/")
+                .takeUnless { it.isBlank() || '/' in it || it.endsWith(":free") }
+                ?: geminiPreset.defaultModel
+        fun urlFor(candidate: String): String =
+            if (resolvedBase.contains("{model}")) {
+                resolvedBase.replace("{model}", candidate)
+            } else {
+                resolvedBase.replace(Regex("/models/[^/:]+(:generateContent)")) { match ->
+                    "/models/$candidate${match.groupValues[1]}"
                 }
             }
-        val body = buildGeminiRequestBody(systemPrompt, userPrompt, temperature, maxTokens, schema)
-        val response =
-            httpClient.post(url) {
-                contentType(ContentType.Application.Json)
-                aiTimeout()
-                if (!url.contains("key=")) header("x-goog-api-key", apiKey.trim())
-                setBody(body.toString())
+        val candidates =
+            if (isBuiltIn) {
+                listOf(requestedModel) + AiProviderPresets.geminiFallbackModels.filter { it != requestedModel }
+            } else {
+                listOf(requestedModel)
             }
-        val text = response.bodyAsText()
-        if (!response.status.isSuccess()) {
-            return Result.failure(
-                LyricsTranslationHttpException(response.status.value, text, response.headers),
+        // Model thinking memakai jatah token yang sama dengan jawaban, jadi beri ruang ekstra.
+        val tokens = maxTokens + GEMINI_EXTRA_OUTPUT_TOKENS
+        val bodies =
+            listOf(
+                buildGeminiRequestBody(systemPrompt, userPrompt, temperature, tokens, schema),
+                buildGeminiRequestBody(systemPrompt, userPrompt, temperature, tokens, null),
             )
+        var lastFailure: Throwable? = null
+        for (candidate in candidates) {
+            val url = urlFor(candidate)
+            for ((bodyIndex, body) in bodies.withIndex()) {
+                val response =
+                    httpClient.post(url) {
+                        attributes.put(ExpectedHttpFailureStatusCodes, setOf(400, 404, 429, 503))
+                        contentType(ContentType.Application.Json)
+                        aiTimeout()
+                        if (!url.contains("key=")) header("x-goog-api-key", apiKey.trim())
+                        setBody(body.toString())
+                    }
+                val text = response.bodyAsText()
+                if (response.status.isSuccess()) {
+                    return parseAiCompletion(text, ::extractGeminiContent)
+                }
+                val failure = LyricsTranslationHttpException(response.status.value, text, response.headers)
+                lastFailure = failure
+                when {
+                    // Model tidak ada atau sedang penuh: coba model cadangan berikutnya.
+                    failure.failure == LyricsTranslationFailure.MODEL_UNAVAILABLE -> break
+
+                    // Beberapa model menolak responseSchema: ulangi tanpa schema.
+                    response.status.value == 400 &&
+                        failure.failure == LyricsTranslationFailure.REQUEST_FAILED &&
+                        bodyIndex < bodies.lastIndex -> Unit
+
+                    else -> return Result.failure(failure)
+                }
+            }
         }
-        return parseAiCompletion(text, ::extractGeminiContent)
+        return Result.failure(lastFailure ?: IllegalStateException("Gemini request failed"))
     }
 
     internal fun buildGeminiRequestBody(
@@ -670,7 +700,7 @@ class LyricsTranslationClient(
         userPrompt: String,
         temperature: Double,
         maxTokens: Int,
-        schema: JsonObject,
+        schema: JsonObject?,
     ): JsonObject =
         buildJsonObject {
             put(
@@ -693,7 +723,7 @@ class LyricsTranslationClient(
                     put("temperature", JsonPrimitive(temperature))
                     put("maxOutputTokens", JsonPrimitive(maxTokens))
                     put("responseMimeType", JsonPrimitive("application/json"))
-                    put("responseSchema", geminiSchema(schema))
+                    if (schema != null) put("responseSchema", geminiSchema(schema))
                 },
             )
         }
@@ -1518,6 +1548,7 @@ class LyricsTranslationClient(
     private companion object {
         // AI models can spend 30 seconds reasoning before returning content.
         const val AI_REQUEST_TIMEOUT_MS = 120_000L
+        const val GEMINI_EXTRA_OUTPUT_TOKENS = 4096
     }
 
     private fun languageName(code: String): String =
