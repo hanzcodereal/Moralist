@@ -85,8 +85,7 @@ class MessageCodec(
         var compressed = false
 
         if (payload != null) {
-            val protoMsg = toProtoMessage(payload)
-            payloadBytes = protoMsg.toByteArray()
+            payloadBytes = ChatWireFormat.encode(payload) ?: toProtoMessage(payload).toByteArray()
             require(payloadBytes.size <= MAX_PAYLOAD_BYTES) { "Listen Together payload exceeds the size limit" }
 
             if (compressionEnabled && payloadBytes.size > COMPRESSION_THRESHOLD) {
@@ -736,6 +735,10 @@ class MessageCodec(
             MessageTypes.SUGGESTION_SUBMITTED -> {
                 val pb = Listentogether.SuggestionSubmittedPayload.parseFrom(payloadBytes)
                 SuggestionSubmittedPayload(pb.suggestionId, protoToTrackInfo(pb.trackInfo))
+            }
+
+            MessageTypes.CHAT_MESSAGE, MessageTypes.CHAT_HISTORY -> {
+                ChatWireFormat.decode(msgType, payloadBytes)
             }
 
             else -> {
