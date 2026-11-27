@@ -36,6 +36,9 @@ object AiProviderPresets {
     const val LEGACY_GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
     const val DEFAULT_LYRICS_AI_MODEL = "qwen/qwen3.7-flash"
+    // Cadangan jika model Gemini yang dipilih tidak ditemukan atau sedang tidak tersedia.
+    val geminiFallbackModels = listOf("gemini-3.1-flash-lite", "gemini-flash-lite-latest")
+
     const val FREE_LYRICS_AI_MODEL = "google/gemma-4-26b-a4b-it:free"
 
     // OpenRouter public catalog, checked 2026-11-13. Prices are USD per million tokens.
@@ -102,8 +105,8 @@ object AiProviderPresets {
                 "Gemini",
                 AiProviderGroup.DIRECT,
                 AiProtocol.GEMINI,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent",
-                "gemini-flash-lite-latest",
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
+                "gemini-2.5-flash-lite",
                 "google",
             ),
             AiProviderPreset(
@@ -159,7 +162,7 @@ object AiProviderPresets {
                 "Gemini-compatible",
                 AiProviderGroup.CUSTOM,
                 AiProtocol.GEMINI,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent",
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
                 editableEndpoint = true,
             ),
             AiProviderPreset("DeepL", AiProviderGroup.SERVICE),
