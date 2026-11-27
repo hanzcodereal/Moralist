@@ -3163,4 +3163,8 @@
     <string name="ai_setup_sign_in_again">Masuk lagi</string>
     <string name="ai_setup_key_limits">Tinjau batas kunci</string>
     <string name="about_developer">Pengembang</string>
+    <string name="listen_together_chat">Chat</string>
+    <string name="listen_together_chat_hint">Write a message</string>
+    <string name="listen_together_chat_send">Send</string>
+    <string name="listen_together_chat_empty">No messages yet. Say hi to everyone in the room!</string>
 </resources>
