@@ -43,12 +43,14 @@ internal fun classifyLyricsTranslationHttpFailure(
     val type = ((metadata?.get("error_type") ?: error?.get("error_type")) as? JsonPrimitive)?.contentOrNull
     val message = (error?.get("message") as? JsonPrimitive)?.contentOrNull.orEmpty().lowercase()
     val code = (error?.get("code") as? JsonPrimitive)?.intOrNull ?: statusCode
+    val status = (error?.get("status") as? JsonPrimitive)?.contentOrNull.orEmpty()
     return when {
         "data policy" in message || "privacy settings" in message -> {
             LyricsTranslationFailure.DATA_POLICY
         }
 
-        type == "authentication" || code == 401 -> {
+        type == "authentication" || code == 401 || status in setOf("UNAUTHENTICATED", "PERMISSION_DENIED") ||
+            "api key not valid" in message || "api key expired" in message || "api_key_invalid" in responseBody.lowercase() -> {
             LyricsTranslationFailure.AUTHENTICATION
         }
 
