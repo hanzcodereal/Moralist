@@ -10,6 +10,8 @@ import com.moralist.shared.listentogether.network.ApproveSuggestionPayload
 import com.moralist.shared.listentogether.network.BufferCompletePayload
 import com.moralist.shared.listentogether.network.BufferReadyPayload
 import com.moralist.shared.listentogether.network.BufferWaitPayload
+import com.moralist.shared.listentogether.network.ChatHistoryPayload
+import com.moralist.shared.listentogether.network.ChatMessagePayload
 import com.moralist.shared.listentogether.network.ClientCapabilities
 import com.moralist.shared.listentogether.network.CreateRoomPayload
 import com.moralist.shared.listentogether.network.ErrorPayload
@@ -34,6 +36,7 @@ import com.moralist.shared.listentogether.network.RejectSuggestionPayload
 import com.moralist.shared.listentogether.network.RejectionReasons
 import com.moralist.shared.listentogether.network.RoomCreatedPayload
 import com.moralist.shared.listentogether.network.RoomState
+import com.moralist.shared.listentogether.network.SendChatPayload
 import com.moralist.shared.listentogether.network.ServerCapabilities
 import com.moralist.shared.listentogether.network.ServerClock
 import com.moralist.shared.listentogether.network.ServerRestartingPayload
@@ -143,8 +146,16 @@ class ListenTogetherManager(
         const val BARRIER_TIMEOUT_MS = 25_000L
         const val MAX_TRACKED_REQUESTS = 128
         const val SYNC_RETRY_DELAY_MS = 1_100L
+        const val MAX_CHAT_MESSAGES = 500
+        const val MAX_CHAT_LENGTH = 400
         val BACKGROUND_REQUEST_TYPES =
-            setOf(MessageTypes.PLAYBACK_ACTION, MessageTypes.BUFFER_READY, MessageTypes.REQUEST_SYNC, MessageTypes.PING)
+            setOf(
+                MessageTypes.PLAYBACK_ACTION,
+                MessageTypes.BUFFER_READY,
+                MessageTypes.REQUEST_SYNC,
+                MessageTypes.PING,
+                MessageTypes.SEND_CHAT,
+            )
         const val SESSION_SEPARATOR = "\n---\n"
         const val LIST_SEPARATOR = "\n"
     }
@@ -235,6 +246,10 @@ class ListenTogetherManager(
     private val _pendingJoinRequests = MutableStateFlow<List<ListenTogetherJoinRequest>>(emptyList())
     val pendingJoinRequests: StateFlow<List<ListenTogetherJoinRequest>> = _pendingJoinRequests.asStateFlow()
     private val autoApprovingSuggestions = mutableMapOf<String, ListenTogetherSuggestion>()
+    private val _chatMessages = MutableStateFlow<List<ListenTogetherChatMessage>>(emptyList())
+    val chatMessages: StateFlow<List<ListenTogetherChatMessage>> = _chatMessages.asStateFlow()
+    private val _chatSupported = MutableStateFlow(false)
+    val chatSupported: StateFlow<Boolean> = _chatSupported.asStateFlow()
     private val _pendingSuggestions = MutableStateFlow<List<ListenTogetherSuggestion>>(emptyList())
     val pendingSuggestions: StateFlow<List<ListenTogetherSuggestion>> = _pendingSuggestions.asStateFlow()
     private val _pendingQueueImport = MutableStateFlow<PendingListenTogetherQueue?>(null)
@@ -445,6 +460,7 @@ class ListenTogetherManager(
                     }
                     codec.compressionEnabled = serverCapabilities.supportsCompression
                     serverFeatures = serverCapabilities.features.toSet()
+                    _chatSupported.value = ProtocolFeatures.CHAT in serverFeatures
                     socket = session
                     reconnectJob?.cancel()
                     reconnectJob = null
@@ -637,6 +653,25 @@ class ListenTogetherManager(
                 _pendingSuggestions.value = _pendingSuggestions.value.filterNot { it.id == suggestionId }
             }
         }
+    }
+
+    /** Mengirim pesan obrolan ke room. Mengembalikan false jika pesan tidak bisa dikirim. */
+    fun sendChat(text: String): Boolean {
+        val trimmed = text.trim().take(MAX_CHAT_LENGTH)
+        if (trimmed.isEmpty() || !_isInRoom.value || ProtocolFeatures.CHAT !in serverFeatures) return false
+        if (socket == null || authenticatedConnectionGeneration != connectionGeneration) return false
+        launchSend(MessageTypes.SEND_CHAT, SendChatPayload(trimmed))
+        return true
+    }
+
+    private fun addChatMessages(messages: List<ChatMessagePayload>) {
+        if (messages.isEmpty()) return
+        val incoming = messages.map { ListenTogetherChatMessage(it.messageId, it.userId, it.username, it.text, it.timestamp) }
+        _chatMessages.value =
+            (_chatMessages.value + incoming)
+                .distinctBy { it.id }
+                .sortedBy { it.timestamp }
+                .takeLast(MAX_CHAT_MESSAGES)
     }
 
     fun suggestTrack(song: SongItem) {
@@ -1384,6 +1419,14 @@ class ListenTogetherManager(
                 }
             }
 
+            MessageTypes.CHAT_MESSAGE -> {
+                (payload as? ChatMessagePayload)?.let { addChatMessages(listOf(it)) }
+            }
+
+            MessageTypes.CHAT_HISTORY -> {
+                (payload as? ChatHistoryPayload)?.let { addChatMessages(it.messages) }
+            }
+
             MessageTypes.KICKED -> {
                 val reason = (payload as? KickedPayload)?.reason
                 cleanupRoom(clearSession = true)
@@ -1392,6 +1435,10 @@ class ListenTogetherManager(
 
             MessageTypes.ERROR -> {
                 val error = payload as? ErrorPayload ?: return
+                if (error.code == "chat_rate_limited") {
+                    log(ListenTogetherLogLevel.WARNING, "Chat message rate limited")
+                    return
+                }
                 if (decidedSuggestionId != null) {
                     synchronized(participationLock) { autoApprovingSuggestions.remove(decidedSuggestionId) }
                     if (error.code == "suggestion_not_found") {
@@ -2271,6 +2318,7 @@ class ListenTogetherManager(
         _pendingJoinRequests.value = emptyList()
         synchronized(participationLock) { autoApprovingSuggestions.clear() }
         _pendingSuggestions.value = emptyList()
+        _chatMessages.value = emptyList()
         _submittedSuggestions.value = emptyMap()
         synchronized(participationLock) {
             outgoingSuggestions.clear()
