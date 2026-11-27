@@ -3,6 +3,7 @@ package com.moralist.android.listentogether
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import androidx.compose.runtime.snapshotFlow
 import com.moralist.android.R
 import com.moralist.android.deviceconnect.AndroidDeviceConnect
 import com.moralist.android.playback.PlayerConnection
@@ -69,6 +70,9 @@ object AndroidListenTogetherManager {
     private var managerObserverJob: Job? = null
     private var notifications: ListenTogetherNotifications? = null
 
+    @Volatile
+    private var observingAccount = false
+
     fun setScreenVisible(visible: Boolean) {
         notifications?.screenVisible?.value = visible
     }
@@ -113,6 +117,19 @@ object AndroidListenTogetherManager {
         playerConnection: PlayerConnection,
     ): ListenTogetherManager {
         val applicationContext = context.applicationContext
+        if (!observingAccount) {
+            synchronized(this) {
+                if (!observingAccount) {
+                    observingAccount = true
+                    // Login/ganti akun bisa terjadi kapan saja, termasuk setelah manager sudah dibuat.
+                    scope.launch {
+                        snapshotFlow {
+                            listOf(Settings.shared.accountName, Settings.shared.accountEmail, Settings.shared.accountChannelHandle)
+                        }.collect { syncListenTogetherUsername(applicationContext, sharedManager) }
+                    }
+                }
+            }
+        }
         playerConnection.ensureConnected()
         val replacedPlayer = playback.replace(playerConnection)
         val manager =
@@ -124,6 +141,8 @@ object AndroidListenTogetherManager {
                 }
             }
         AndroidDeviceConnect.manager.remote.transferBlocked = { manager.hasActiveOrPendingRoom }
+        // Akun bisa baru login setelah manager dibuat, jadi nama disinkronkan setiap kali dipakai.
+        syncListenTogetherUsername(applicationContext, manager)
         if (
             replacedPlayer &&
             manager.role.value == ListenTogetherRoomRole.GUEST &&
@@ -146,15 +165,34 @@ object AndroidListenTogetherManager {
         return manager
     }
 
+    /**
+     * Nama yang dibuat otomatis (dari akun, atau nama tamu "Pengguna Android" + angka acak) ikut
+     * diperbarui saat akun berubah. Nama yang diketik sendiri pengguna tidak pernah diubah.
+     */
+    private fun syncListenTogetherUsername(
+        context: Context,
+        manager: ListenTogetherManager?,
+    ) {
+        val placeholder = context.getString(R.string.listen_together_android_user)
+        val stored = Settings.shared.listenTogetherUsername.trim()
+        val accountName =
+            Settings.shared.accountName.trim()
+                .ifBlank { Settings.shared.accountChannelHandle.trim() }
+                .ifBlank { Settings.shared.accountEmail.substringBefore('@').trim() }
+        val isAutoName = stored.isBlank() || stored.startsWith(placeholder)
+        val next =
+            when {
+                accountName.isNotBlank() -> accountName.takeIf { isAutoName && it != stored }
+                stored.isBlank() || stored == placeholder -> "$placeholder ${(1000..9999).random()}"
+                else -> null
+            } ?: return
+        Settings.shared.listenTogetherUsername = next
+        // Nama lokal hanya dipakai saat membuat atau bergabung room; daftar peserta di room memakai nama dari server.
+        manager?.setUsername(next)
+    }
+
     private fun createManager(context: Context): ListenTogetherManager {
-        if (Settings.shared.listenTogetherUsername.isBlank()) {
-            Settings.shared.listenTogetherUsername =
-                Settings.shared.accountName.ifBlank { Settings.shared.accountChannelHandle }.ifBlank {
-                    Settings.shared.accountEmail.substringBefore('@').ifBlank {
-                        context.getString(R.string.listen_together_android_user)
-                    }
-                }
-        }
+        syncListenTogetherUsername(context, null)
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault())
         return ListenTogetherManager(
             callerScope = scope,
