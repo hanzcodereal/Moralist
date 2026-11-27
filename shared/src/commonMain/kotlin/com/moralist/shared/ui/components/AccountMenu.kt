@@ -55,7 +55,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -65,13 +64,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
-import com.moralist.shared.BuildConfig
 import com.moralist.shared.generated.resources.Res
 import com.moralist.shared.generated.resources.account_login_with_token
 import com.moralist.shared.generated.resources.account_login_with_token_hint
 import com.moralist.shared.generated.resources.account_logout_confirm
-import com.moralist.shared.generated.resources.account_menu_license
-import com.moralist.shared.generated.resources.account_menu_title
 import com.moralist.shared.generated.resources.account_sign_in
 import com.moralist.shared.generated.resources.account_user_icon
 import com.moralist.shared.generated.resources.action_logout
@@ -360,25 +356,6 @@ internal fun AccountMenuContent(
         }
 
         afterMenuContent?.invoke(this, onDismiss)
-
-        Column(
-            modifier = Modifier.fillMaxWidth().expressiveEntrance(4).padding(top = 4.dp, bottom = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                stringResource(Res.string.account_menu_title, BuildConfig.APP_VERSION),
-                style = MaterialTheme.typography.labelLarge,
-                color = colorScheme.primary,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                stringResource(Res.string.account_menu_license),
-                style = MaterialTheme.typography.bodySmall,
-                color = colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
     }
 
     PopupVisibility(visible = showLogoutDialog) {
