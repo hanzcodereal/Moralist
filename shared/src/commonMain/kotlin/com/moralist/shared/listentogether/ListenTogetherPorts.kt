@@ -143,6 +143,14 @@ data class ListenTogetherSuggestion(
     val trackInfo: TrackInfo,
 )
 
+data class ListenTogetherChatMessage(
+    val id: String,
+    val userId: String,
+    val username: String,
+    val text: String,
+    val timestamp: Long,
+)
+
 data class PendingListenTogetherQueue(
     val title: String,
     val songs: List<SongItem>,
