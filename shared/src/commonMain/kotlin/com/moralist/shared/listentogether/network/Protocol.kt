@@ -25,6 +25,7 @@ object MessageTypes {
     const val APPROVE_SUGGESTION = "approve_suggestion"
     const val REJECT_SUGGESTION = "reject_suggestion"
     const val CLIENT_CAPABILITIES = "client_capabilities"
+    const val SEND_CHAT = "send_chat"
 
     const val ROOM_CREATED = "room_created"
     const val JOIN_REQUEST = "join_request"
@@ -50,6 +51,8 @@ object MessageTypes {
     const val ACK = "ack"
     const val SERVER_RESTARTING = "server_restarting"
     const val SUGGESTION_SUBMITTED = "suggestion_submitted"
+    const val CHAT_MESSAGE = "chat_message"
+    const val CHAT_HISTORY = "chat_history"
 }
 
 object ProtocolFeatures {
@@ -62,6 +65,7 @@ object ProtocolFeatures {
     const val REPLACE_QUEUE = "replace_queue"
     const val HOST_SEQUENCE = "host_sequence"
     const val TRACK_REVISION = "track_revision"
+    const val CHAT = "chat"
 
     val supported =
         listOf(
@@ -74,6 +78,7 @@ object ProtocolFeatures {
             REPLACE_QUEUE,
             HOST_SEQUENCE,
             TRACK_REVISION,
+            CHAT,
         )
 }
 
@@ -376,6 +381,25 @@ data class ServerRestartingPayload(
 data class SuggestionSubmittedPayload(
     @SerialName("suggestion_id") val suggestionId: String,
     @SerialName("track_info") val trackInfo: TrackInfo,
+)
+
+@Serializable
+data class SendChatPayload(
+    val text: String,
+)
+
+@Serializable
+data class ChatMessagePayload(
+    @SerialName("message_id") val messageId: String,
+    @SerialName("user_id") val userId: String,
+    val username: String,
+    val text: String,
+    val timestamp: Long,
+)
+
+@Serializable
+data class ChatHistoryPayload(
+    val messages: List<ChatMessagePayload>,
 )
 
 /** Server-compatible CRC-32 IEEE over the current and upcoming track IDs, each followed by a newline. */
