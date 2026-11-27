@@ -2,7 +2,7 @@
 
 Aplikasi pemutar musik Android berbahasa Indonesia. Dikembangkan oleh **Hanz Dev Official** (hanzzcodee@gmail.com).
 
-Versi aplikasi 2.0.0, platform Android, hanya build release. Server: https://moralist.up.railway.app
+Versi aplikasi 3.0.0, platform Android, hanya build release. Server: https://moralist.up.railway.app
 
 ## Build APK release
 
