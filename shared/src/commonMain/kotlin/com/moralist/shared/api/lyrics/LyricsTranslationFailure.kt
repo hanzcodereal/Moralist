@@ -17,11 +17,25 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 
+private fun httpFailureMessage(
+    statusCode: Int,
+    responseBody: String,
+): String {
+    val detail =
+        runCatching {
+            ((Json.parseToJsonElement(responseBody) as? JsonObject)?.get("error") as? JsonObject)
+                ?.get("message")
+                ?.let { it as? JsonPrimitive }
+                ?.contentOrNull
+        }.getOrNull()?.trim()?.takeIf { it.isNotEmpty() }
+    return "AI request failed (HTTP $statusCode)" + (detail?.let { ": ${it.take(200)}" } ?: "")
+}
+
 internal class LyricsTranslationHttpException(
     val statusCode: Int,
     responseBody: String,
     val headers: Headers = Headers.Empty,
-) : IllegalStateException("AI request failed (HTTP $statusCode)") {
+) : IllegalStateException(httpFailureMessage(statusCode, responseBody)) {
     val failure = classifyLyricsTranslationHttpFailure(statusCode, responseBody, headers)
 
     fun retryAtMillis(now: Long): Long? {
