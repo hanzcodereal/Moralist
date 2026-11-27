@@ -548,7 +548,7 @@
     <string name="appearance_theme">Tema</string>
     <string name="appearance_style">Gaya</string>
     <string name="appearance_app_icon">Ikon aplikasi</string>
-    <string name="appearance_app_icon_credit">Ikon alternatif dari Kayé (@thy_k di Discord)</string>
+    <string name="appearance_app_icon_credit">Ikon alternatif</string>
     <string name="material_you" translatable="false">Material You</string>
     <string name="material_you_description">Gunakan skema warna Material yang dihasilkan</string>
     <string name="ui_enhancements">Peningkatan UI</string>
@@ -3053,7 +3053,7 @@
 
     <string name="settings_appearance_overview">Tema, font, dan tampilan pemutar</string>
     <string name="settings_android_auto_overview">Playlist di mobil dan tujuan tambah cepat</string>
-    <string name="settings_about_overview">Kontributor, tautan komunitas, dan lisensi</string>
+    <string name="settings_about_overview">Info aplikasi, pembuat, dan lisensi</string>
     <string name="settings_supported_links_overview">Pilih tautan YouTube yang dibuka di Moralist</string>
     <string name="settings_equalizer_overview">Preset suara, pita frekuensi, dan profil</string>
     <string name="settings_fonts_overview">Pemilihan dan impor font</string>
